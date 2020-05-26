@@ -3,6 +3,7 @@ Connecting to Spark cluster example through a Jupyter notebook
 
 To run the examples
 
+* Rebuild the image (I've made some changes to adapt the version of tools) `docker-compose build`
 * Launch the services `docker-compose up`
 * Navigate to the notebook URL displayed in the logs, something like `http://127.0.0.1:8888/?token=<token>`
 * Spark Web UI will be available at: `http://localhost:8080/`

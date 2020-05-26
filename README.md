@@ -1,39 +1,93 @@
+Connecting to Spark cluster example through a Jupyter notebook
+==============================================================
 
-# spark
+To run the examples
 
-A `debian:stretch` based [Spark](http://spark.apache.org) container. Use it in a standalone cluster with the accompanying `docker-compose.yml`, or as a base for more complex recipes.
+* Launch the services `docker-compose up`
+* Navigate to the notebook URL displayed in the logs, something like `http://127.0.0.1:8888/?token=<token>`
+* Spark Web UI will be available at: `http://localhost:8080/`
 
-## docker example
+# Connecting to a Spark Cluster in Standalone Mode
 
-To run `SparkPi`, run the image with Docker:
+In the following example we are using the Spark master URL `spark://master:7077` that shall be replaced by the URL of the Spark master.
 
-    docker run --rm -it -p 4040:4040 gettyimages/spark bin/run-example SparkPi 10
+## In a Python Notebook
 
-To start `spark-shell` with your AWS credentials:
+The **same Python version** need to be installed on the notebook (where the driver is located) and on the workers.
 
-    docker run --rm -it -e "AWS_ACCESS_KEY_ID=YOURKEY" -e "AWS_SECRET_ACCESS_KEY=YOURSECRET" -p 4040:4040 gettyimages/spark bin/spark-shell
+```python
+from pyspark.sql import SparkSession
 
-To do a thing with Pyspark
+# Spark session & context
+spark = SparkSession.builder.master('spark://master:7077').getOrCreate()
+sc = spark.sparkContext
 
-    echo -e "import pyspark\n\nprint(pyspark.SparkContext().parallelize(range(0, 10)).count())" > count.py
-    docker run --rm -it -p 4040:4040 -v $(pwd)/count.py:/count.py gettyimages/spark bin/spark-submit /count.py
+# do something to prove it works
+rdd = sc.parallelize(range(100))
+rdd.sumApprox(3)
+```
 
-## docker-compose example
+## In a R Notebook
 
-To create a simplistic standalone cluster with [docker-compose](http://docs.docker.com/compose):
+Jupyter notebooks comes with two libraries permitting to interact with Spark: [SparkR](https://spark.apache.org/docs/latest/sparkr.html) and [sparklyr](https://spark.rstudio.com/).
 
-    docker-compose up
+### SparkR
 
-The SparkUI will be running at `http://${YOUR_DOCKER_HOST}:8080` with one worker listed. To run `pyspark`, exec into a container:
+R has to be installed on the worker nodes.
 
-    docker exec -it docker-spark_master_1 /bin/bash
-    bin/pyspark
+```python
+library(SparkR)
 
-To run `SparkPi`, exec into a container:
+# Spark session
+sc <- sparkR.session("spark://master:7077")
 
-    docker exec -it docker-spark_master_1 /bin/bash
-    bin/run-example SparkPi 10
+# do something to prove it works
+data(iris)
+df <- as.DataFrame(iris)
+head(filter(df, df$Petal_Width > 0.2))
+```
 
-## license
+### Sparklyr
 
-MIT
+```python
+library(sparklyr)
+library(dplyr)
+
+# Spark session
+sc <- spark_connect(master = "spark://master:7077")
+
+# do something to prove it works
+iris_tbl <- copy_to(sc, iris)
+iris_tbl %>% 
+    filter(Petal_Width > 0.2) %>%
+    head()
+```
+
+## In Scala
+
+Jupyter notebooks comes with two ways to interact with Spark in scala: through [Spylon kernel](https://github.com/Valassis-Digital-Media/spylon-kernel) and [Apache Toree kernel](https://toree.apache.org/)
+
+### In a Spylon Kernel Scala Notebook
+
+```python
+%%init_spark
+# Spark session
+launcher.master = "spark://master:7077"
+launcher.conf.spark.executor.cores = 1
+
+# do something to prove it works
+val rdd = sc.parallelize(0 to 100)
+rdd.takeSample(false, 5)
+```
+
+### In an Apache Toree Scala Notebook
+
+```python
+// Spark session already initialized
+// should print the value of --master in the kernel spec
+println(sc.master)
+
+// do something to prove it works
+val rdd = sc.parallelize(0 to 100)
+rdd.sum()
+```

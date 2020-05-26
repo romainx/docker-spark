@@ -57,6 +57,7 @@ services:
     hostname: notebook
     environment: 
       JUPYTER_ENABLE_LAB: "yes"
+      SPARK_OPTS: "--master=spark://master:7077"
     ports:
       - 8888:8888
     volumes:

@@ -2,6 +2,7 @@ version: "2.2"
 services:
   master:
     image: gettyimages/spark
+    build: .
     command: bin/spark-class org.apache.spark.deploy.master.Master -h master
     hostname: master
     environment:
@@ -27,6 +28,7 @@ services:
 
   worker:
     image: gettyimages/spark
+    build: .
     command: bin/spark-class org.apache.spark.deploy.worker.Worker spark://master:7077
     hostname: worker
     environment:
@@ -49,3 +51,13 @@ services:
     volumes:
       - ./conf/worker:/conf
       - ./data:/tmp/data
+
+  notebook:
+    image: jupyter/all-spark-notebook
+    hostname: notebook
+    environment: 
+      JUPYTER_ENABLE_LAB: "yes"
+    ports:
+      - 8888:8888
+    volumes:
+      - ./work:/home/jovyan/work
